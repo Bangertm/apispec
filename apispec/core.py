@@ -14,6 +14,7 @@ VALID_METHODS = [
     'delete',
     'head',
     'options',
+    
 ]
 
 OPENAPI_VERSION = SWAGGER_VERSION = '2.0'
