@@ -94,7 +94,7 @@ def validate_swagger(spec):
         fp.seek(0)
         try:
             subprocess.check_output(
-                ['check_api', fp.name],
+                ['check_api.cmd', fp.name],
                 stderr=subprocess.STDOUT,
             )
         except subprocess.CalledProcessError as error:
