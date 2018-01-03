@@ -85,7 +85,7 @@ def load_operations_from_docstring(docstring):
 
 def validate_swagger(spec):
     """Validate the output of an :class:`APISpec` object.
-    Note: Requires installing the node package `swagger-tools`.
+    Note: Requires installing the node package `check_api`.
 
     :raise: SwaggerError if validation fails.
     """
@@ -94,7 +94,7 @@ def validate_swagger(spec):
         fp.seek(0)
         try:
             subprocess.check_output(
-                ['swagger-tools', 'validate', fp.name],
+                ['check_api', fp.name],
                 stderr=subprocess.STDOUT,
                 shell=True,
             )
