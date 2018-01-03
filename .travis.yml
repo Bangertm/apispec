@@ -9,7 +9,6 @@ python:
 install:
 - pip install -U .
 - npm install -g check_api
-- node check_api swagger.json
 - check_api swagger.json
 - pip install -r dev-requirements.txt
 script: invoke test
