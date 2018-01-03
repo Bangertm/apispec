@@ -2,6 +2,7 @@
 """Various utilities for parsing OpenAPI operations from docstrings and validating against
 the OpenAPI spec.
 """
+import os
 import re
 import json
 import tempfile
@@ -92,10 +93,12 @@ def validate_swagger(spec):
     with tempfile.NamedTemporaryFile(mode='w') as fp:
         json.dump(spec.to_dict(), fp)
         fp.seek(0)
+        shell = os.name == 'nt'  # Set shell to true if running on Windows
         try:
             subprocess.check_output(
-                ['check_api.cmd', fp.name],
+                ['check_api', fp.name],
                 stderr=subprocess.STDOUT,
+                shell=shell,
             )
         except subprocess.CalledProcessError as error:
             raise exceptions.SwaggerError(error.output.decode('utf-8'))
