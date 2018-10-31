@@ -38,6 +38,10 @@ from .common import resolve_schema_cls, resolve_schema_instance
 from .openapi import OpenAPIConverter
 
 
+def resolver(schema):
+    return schema.__name__.replace('Schema', '')
+
+
 class MarshmallowPlugin(BasePlugin):
     """APISpec plugin handling marshmallow schemas
 
@@ -50,7 +54,7 @@ class MarshmallowPlugin(BasePlugin):
             def schema_name_resolver(schema):
                 return schema.__name__
     """
-    def __init__(self, schema_name_resolver=None):
+    def __init__(self, schema_name_resolver=resolver):
         super(MarshmallowPlugin, self).__init__()
         self.schema_name_resolver = schema_name_resolver
         self.spec = None
@@ -61,34 +65,11 @@ class MarshmallowPlugin(BasePlugin):
         super(MarshmallowPlugin, self).init_spec(spec)
         self.spec = spec
         self.openapi_version = spec.openapi_version
-        self.openapi = OpenAPIConverter(openapi_version=spec.openapi_version)
-
-    def inspect_schema_for_auto_referencing(self, original_schema_instance):
-        """Parse given schema instance and reference eventual nested schemas
-        :param original_schema_instance: schema to parse
-        """
-        # schema_name_resolver must be provided to use this function
-        assert self.schema_name_resolver
-
-        for field in original_schema_instance.fields.values():
-            nested_schema_class = None
-
-            if isinstance(field, marshmallow.fields.Nested):
-                nested_schema_class = resolve_schema_cls(field.schema)
-
-            elif isinstance(field, marshmallow.fields.List) \
-                    and isinstance(field.container, marshmallow.fields.Nested):
-                nested_schema_class = resolve_schema_cls(field.container.schema)
-
-            if nested_schema_class and nested_schema_class not in self.openapi.refs:
-                definition_name = self.schema_name_resolver(
-                    nested_schema_class,
-                )
-                if definition_name:
-                    self.spec.definition(
-                        definition_name,
-                        schema=nested_schema_class,
-                    )
+        self.openapi = OpenAPIConverter(
+            openapi_version=spec.openapi_version,
+            schema_name_resolver=self.schema_name_resolver,
+            spec=spec,
+        )
 
     def resolve_parameters(self, parameters):
         resolved = []
@@ -170,10 +151,6 @@ class MarshmallowPlugin(BasePlugin):
         self.openapi.refs[schema_cls] = name
 
         json_schema = self.openapi.schema2jsonschema(schema_instance, name=name)
-
-        # Auto reference schema if schema_name_resolver
-        if self.schema_name_resolver:
-            self.inspect_schema_for_auto_referencing(schema_instance)
 
         return json_schema
 

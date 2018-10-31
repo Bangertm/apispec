@@ -104,8 +104,10 @@ class OpenAPIConverter(object):
     :param str|OpenAPIVersion openapi_version: The OpenAPI version to use.
         Should be in the form '2.x' or '3.x.x' to comply with the OpenAPI standard.
     """
-    def __init__(self, openapi_version):
+    def __init__(self, openapi_version, schema_name_resolver, spec):
         self.openapi_version = OpenAPIVersion(openapi_version)
+        self.schema_name_resolver = schema_name_resolver
+        self.spec = spec
         # Schema references
         self.refs = {}
         # Field mappings
@@ -362,12 +364,19 @@ class OpenAPIConverter(object):
                     else:
                         ret.update(ref_schema)
             else:
+                nested_schema_class = resolve_schema_cls(field.schema)
+                if nested_schema_class and nested_schema_class not in self.refs:
+                    self.add_nested_schema_to_spec(nested_schema_class)
                 schema_dict = self.resolve_schema_dict(field.schema, dump=dump, load=load)
                 if ret and '$ref' in schema_dict:
                     ret.update({'allOf': [schema_dict]})
                 else:
                     ret.update(schema_dict)
         elif isinstance(field, marshmallow.fields.List):
+            if isinstance(field.container, marshmallow.fields.Nested):
+                nested_schema_class = resolve_schema_cls(field.container.schema)
+                if nested_schema_class and nested_schema_class not in self.refs:
+                    self.add_nested_schema_to_spec(nested_schema_class)
             ret['items'] = self.field2property(
                 field.container, use_refs=use_refs, dump=dump, load=load,
             )
@@ -391,6 +400,19 @@ class OpenAPIConverter(object):
         ret.pop('ref', None)
 
         return ret
+
+    def add_nested_schema_to_spec(self, nested_schema_class):
+        """Add a schema to the spec
+        :param nested_schema_class: schema to add to the spec
+        """
+        definition_name = self.schema_name_resolver(
+            nested_schema_class,
+        )
+        if definition_name:
+            self.spec.definition(
+                definition_name,
+                schema=nested_schema_class,
+            )
 
     def schema2parameters(self, schema, **kwargs):
         """Return an array of OpenAPI parameters given a given marshmallow
@@ -590,7 +612,7 @@ class OpenAPIConverter(object):
 
         jsonschema = {
             'type': 'object',
-            'properties': OrderedLazyDict() if getattr(Meta, 'ordered', None) else LazyDict(),
+            'properties': OrderedDict() if getattr(Meta, 'ordered', None) else {},
         }
 
         exclude = set(getattr(Meta, 'exclude', []))
@@ -603,13 +625,11 @@ class OpenAPIConverter(object):
             ):
                 continue
 
-            def prop_func(field_obj=field_obj):
-                return self.field2property(
-                    field_obj, use_refs=use_refs, dump=dump, load=load, name=name,
-                )
-
             observed_field_name = self._observed_name(field_obj, field_name)
-            jsonschema['properties'][observed_field_name] = prop_func
+            property = self.field2property(
+                field_obj, use_refs=use_refs, dump=dump, load=load, name=name,
+            )
+            jsonschema['properties'][observed_field_name] = property
 
             partial = getattr(schema, 'partial', None)
             if field_obj.required:

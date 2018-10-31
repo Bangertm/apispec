@@ -7,7 +7,8 @@ from pytest import mark
 
 from marshmallow import fields, Schema, validate
 
-from apispec.ext.marshmallow import MarshmallowPlugin
+from apispec.ext.marshmallow import MarshmallowPlugin, resolver
+from apispec.ext.marshmallow.common import get_fields
 from apispec.ext.marshmallow.openapi import OpenAPIConverter, MARSHMALLOW_VERSION_INFO
 from apispec import exceptions, utils, APISpec
 
@@ -15,8 +16,12 @@ from .utils import get_definitions
 
 
 @pytest.fixture(params=('2.0', '3.0.0'))
-def openapi(request):
-    return OpenAPIConverter(openapi_version=request.param)
+def openapi(request, spec):
+    return OpenAPIConverter(
+        openapi_version=request.param,
+        schema_name_resolver=resolver,
+        spec=spec,
+    )
 
 
 class TestMarshmallowFieldToOpenAPI:
@@ -692,6 +697,14 @@ class TestNesting:
         # name is passed
         res = openapi.field2property(self_nesting2, name='Foo')
         assert res == {'$ref': '#/definitions/Bar'}
+
+    def test_nested2(self, spec):
+
+        class MySchema(Schema):
+            my_nested = fields.Nested('self')
+            my_str = fields.String()
+
+        spec.definition('MySchema', schema=MySchema)
 
     def test_field2property_nested_dump_only(self, openapi):
         category = fields.Nested(CategorySchema)
