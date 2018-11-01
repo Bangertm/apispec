@@ -54,9 +54,9 @@ class MarshmallowPlugin(BasePlugin):
             def schema_name_resolver(schema):
                 return schema.__name__
     """
-    def __init__(self, schema_name_resolver=resolver):
+    def __init__(self, schema_name_resolver=None):
         super(MarshmallowPlugin, self).__init__()
-        self.schema_name_resolver = schema_name_resolver
+        self.schema_name_resolver = schema_name_resolver or resolver
         self.spec = None
         self.openapi_version = None
         self.openapi = None
