@@ -680,8 +680,10 @@ class TestDictValues:
         assert len(get_definitions(spec)) == 2
 
         result = get_definitions(spec)['SchemaWithDict']['properties']['dict_field']
-        assert result == {'additionalProperties': {'$ref': ref_path(spec) + 'Pet'},
-                          'type': 'object'}
+        assert result == {
+            'additionalProperties': {'$ref': ref_path(spec) + 'Pet'},
+            'type': 'object',
+        }
 
 
 class TestList:
@@ -695,5 +697,7 @@ class TestList:
         assert len(get_definitions(spec)) == 2
 
         result = get_definitions(spec)['SchemaWithList']['properties']['list_field']
-        assert result == {'items': {'$ref': ref_path(spec) + 'Pet'},
-                          'type': 'array'}
+        assert result == {
+            'items': {'$ref': ref_path(spec) + 'Pet'},
+            'type': 'array',
+        }
