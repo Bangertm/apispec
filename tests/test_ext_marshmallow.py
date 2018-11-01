@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from marshmallow.fields import Field, DateTime, Dict, String
+from marshmallow.fields import Field, DateTime, Dict, String, Nested, List
 from marshmallow import Schema
 
 from apispec import APISpec
@@ -669,3 +669,31 @@ class TestDictValues:
         spec.definition('SchemaWithDict', schema=SchemaWithDict)
         result = get_definitions(spec)['SchemaWithDict']['properties']['dict_field']
         assert result == {'type': 'object'}
+
+    def test_dict_with_nested(self, spec):
+
+        class SchemaWithDict(Schema):
+            dict_field = Dict(values=Nested(PetSchema))
+
+        spec.definition('SchemaWithDict', schema=SchemaWithDict)
+
+        assert len(get_definitions(spec)) == 2
+
+        result = get_definitions(spec)['SchemaWithDict']['properties']['dict_field']
+        assert result == {'additionalProperties': {'$ref': ref_path(spec) + 'Pet'},
+                          'type': 'object'}
+
+
+class TestList:
+    def test_list_with_nested(self, spec):
+
+        class SchemaWithList(Schema):
+            list_field = List(Nested(PetSchema))
+
+        spec.definition('SchemaWithList', schema=SchemaWithList)
+
+        assert len(get_definitions(spec)) == 2
+
+        result = get_definitions(spec)['SchemaWithList']['properties']['list_field']
+        assert result == {'items': {'$ref': ref_path(spec) + 'Pet'},
+                          'type': 'array'}

@@ -373,10 +373,6 @@ class OpenAPIConverter(object):
                 else:
                     ret.update(schema_dict)
         elif isinstance(field, marshmallow.fields.List):
-            if isinstance(field.container, marshmallow.fields.Nested):
-                nested_schema_class = resolve_schema_cls(field.container.schema)
-                if nested_schema_class and nested_schema_class not in self.refs:
-                    self.add_nested_schema_to_spec(nested_schema_class)
             ret['items'] = self.field2property(
                 field.container, use_refs=use_refs, dump=dump, load=load,
             )
