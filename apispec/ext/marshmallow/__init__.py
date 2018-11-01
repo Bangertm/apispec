@@ -39,7 +39,9 @@ from .openapi import OpenAPIConverter
 
 
 def resolver(schema):
-    return schema.__name__.replace('Schema', '')
+    """Default implementation of a schema name resolver function
+    """
+    return schema.__name__.replace('Schema', '', 1) or schema.__name__
 
 
 class MarshmallowPlugin(BasePlugin):
