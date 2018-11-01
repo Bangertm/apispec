@@ -8,7 +8,6 @@ from pytest import mark
 from marshmallow import fields, Schema, validate
 
 from apispec.ext.marshmallow import MarshmallowPlugin, resolver
-from apispec.ext.marshmallow.common import get_fields
 from apispec.ext.marshmallow.openapi import OpenAPIConverter, MARSHMALLOW_VERSION_INFO
 from apispec import exceptions, utils, APISpec
 
