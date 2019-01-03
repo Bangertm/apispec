@@ -222,22 +222,8 @@ class OpenAPIConverter(object):
 
         attributes = {}
         for validator in validators:
-            if validator.min is not None:
-                if hasattr(attributes, 'minimum'):
-                    attributes['minimum'] = max(
-                        attributes['minimum'],
-                        validator.min,
-                    )
-                else:
-                    attributes['minimum'] = validator.min
-            if validator.max is not None:
-                if hasattr(attributes, 'maximum'):
-                    attributes['maximum'] = min(
-                        attributes['maximum'],
-                        validator.max,
-                    )
-                else:
-                    attributes['maximum'] = validator.max
+            set_minimum(attributes, validator, 'minimum')
+            set_maximum(attributes, validator, 'maximum')
         return attributes
 
     def field2length(self, field, **kwargs):
@@ -268,22 +254,8 @@ class OpenAPIConverter(object):
         max_attr = 'maxItems' if is_array else 'maxLength'
 
         for validator in validators:
-            if validator.min is not None:
-                if hasattr(attributes, min_attr):
-                    attributes[min_attr] = max(
-                        attributes[min_attr],
-                        validator.min,
-                    )
-                else:
-                    attributes[min_attr] = validator.min
-            if validator.max is not None:
-                if hasattr(attributes, max_attr):
-                    attributes[max_attr] = min(
-                        attributes[max_attr],
-                        validator.max,
-                    )
-                else:
-                    attributes[max_attr] = validator.max
+            set_minimum(attributes, validator, min_attr)
+            set_maximum(attributes, validator, max_attr)
 
         for validator in validators:
             if validator.equal is not None:
@@ -682,3 +654,31 @@ class OpenAPIConverter(object):
         :return: schema class of given schema (instance or class)
         """
         return resolve_schema_cls(schema)
+
+
+def set_minimum(attributes, validator, min_attr):
+    """Function to set a minimum value if the validator's `min` property is
+    larger than the value previously set in the attribute dictionary
+    """
+    if validator.min is not None:
+        if hasattr(attributes, min_attr):
+            attributes[min_attr] = max(
+                attributes[min_attr],
+                validator.min,
+            )
+        else:
+            attributes[min_attr] = validator.min
+
+
+def set_maximum(attributes, validator, max_attr):
+    """Function to set a maximum value if the validator's `max` property
+    is smaller than the value previously set in the attribute dictionary
+    """
+    if validator.max is not None:
+        if hasattr(attributes, max_attr):
+            attributes[max_attr] = min(
+                attributes[max_attr],
+                validator.max,
+            )
+        else:
+            attributes[max_attr] = validator.max
